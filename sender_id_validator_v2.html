@@ -1,0 +1,197 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>meaage Sender ID Validator</title>
+  <style>
+    body {
+      font-family: 'Poppins', sans-serif;
+      background: linear-gradient(to bottom, #ff9933, white, #138808);
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      min-height: 100vh;
+      padding: 1rem;
+      box-sizing: border-box;
+    }
+    .container {
+      background: rgba(255, 255, 255, 0.95);
+      padding: 2rem;
+      border-radius: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+      max-width: 400px;
+      width: 100%;
+      text-align: center;
+      margin: auto;
+      display: flex;
+      flex-direction: column;
+    }
+    h2 {
+      color: #ff9933;
+      font-size: 24px;
+      margin-bottom: 1rem;
+    }
+    input {
+      padding: 12px;
+      width: 100%;
+      border: 2px solid #138808;
+      border-radius: 8px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    button {
+      margin-top: 15px;
+      background: #ff9933;
+      color: white;
+      border: none;
+      padding: 12px;
+      font-size: 18px;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: background 0.3s ease;
+      width: 100%;
+    }
+    button:hover {
+      background: #cc7a00;
+    }
+    .result {
+      margin-top: 20px;
+      font-size: 16px;
+      font-weight: bold;
+      color: #333;
+      text-align: left;
+      line-height: 1.5;
+    }
+    a.report-link {
+      display: block;
+      margin-top: 15px;
+      color: #ff0000;
+      font-weight: bold;
+      text-decoration: none;
+      transition: color 0.3s ease;
+    }
+    a.report-link:hover {
+      color: #c40000;
+    }
+    .footer {
+      margin-top: 20px;
+      font-size: 14px;
+      color: #333;
+      text-align: center;
+      border-top: 1px dashed #ddd;
+      padding-top: 10px;
+    }
+    .footer a {
+      color: #007BFF;
+      text-decoration: none;
+      font-weight: bold;
+      transition: color 0.3s ease;
+    }
+    .footer a:hover {
+      color: #0056b3;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>Sender ID Validator</h2>
+    <input id="senderInput" placeholder="Enter Sender ID (e.g., VM-IDFCFB)" />
+    <button onclick="checkSender()">Check Sender Info</button>
+    <div id="output" class="result"></div>
+    <a class="report-link" href="https://smscomplaints.co.in/UC_Consumer/Login.aspx" target="_blank">
+      🚨 Report suspicious sender to TRAI DND Portal
+    </a>
+    <div class="footer">
+      Created by <strong>Tejas Davekar</strong>, Student of Shivaji University, Kolhapur | 
+      <a href="https://www.linkedin.com/in/tejas-davekar" target="_blank">LinkedIn Profile</a>
+    </div>
+  </div>
+
+  <script>
+    const operatorCodes = {
+      J: "Reliance Jio",
+      V: "Vodafone Idea",
+      I: "Airtel",
+      T: "BSNL",
+      B: "MTNL"
+    };
+
+    const circleCodes = {
+      A: "Andhra Pradesh", B: "Assam", C: "Kolkata", D: "Delhi", E: "Uttar Pradesh (East)",
+      F: "North East", G: "Gujarat", H: "Haryana", I: "Himachal Pradesh", J: "Jammu & Kashmir",
+      K: "Karnataka", L: "Kerala", M: "Maharashtra", N: "Bihar", O: "Odisha", P: "Punjab",
+      Q: "Chhattisgarh", R: "Rajasthan", S: "Madhya Pradesh", T: "Tamil Nadu",
+      U: "Uttar Pradesh (West)", V: "West Bengal", W: "Mumbai", X: "Andaman & Nicobar",
+      Y: "Pondicherry", Z: "Goa"
+    };
+
+    const messageTypes = {
+      CMP: "Campaign",
+      OTP: "One-Time Password",
+      FB: "Financial Business",
+      CC: "Customer Communication",
+      SC: "Service Confirmation",
+      TRX: "Transaction Alert",
+      INF: "Information Update",
+      SUB: "Subscription Notice",
+      PAY: "Payment Notification",
+      BILL: "Billing Alert",
+      REF: "Refund Info"
+    };
+
+    function parseSenderPrefix(prefix) {
+      if (prefix.length !== 2) return { operator: "Unknown", circle: "Unknown" };
+      const opCode = prefix[0].toUpperCase();
+      const circleCode = prefix[1].toUpperCase();
+      const operator = operatorCodes[opCode] || "Unknown";
+      const circle = circleCodes[circleCode] || "Unknown";
+      return { operator, circle };
+    }
+
+    function checkSender() {
+      const input = document.getElementById('senderInput').value.trim();
+      const parts = input.split('-');
+      
+      if (parts.length < 2) {
+        document.getElementById('output').innerHTML = "❌ Invalid format. Expecting: XX-SENDERMESSAGE";
+        return;
+      }
+      
+      const prefix = parts[0].toUpperCase();
+      const senderPartRaw = parts.slice(1).join('-').toUpperCase();
+
+      const sortedMessageKeys = Object.keys(messageTypes).sort((a, b) => b.length - a.length);
+      let detectedMessageKey = "";
+      for (const key of sortedMessageKeys) {
+        if (senderPartRaw.endsWith(key)) {
+          detectedMessageKey = key;
+          break;
+        }
+      }
+      
+      let senderCode = "";
+      let messageTypeKey = "";
+      if (detectedMessageKey) {
+        senderCode = senderPartRaw.slice(0, senderPartRaw.length - detectedMessageKey.length);
+        messageTypeKey = detectedMessageKey;
+      } else {
+        senderCode = senderPartRaw;
+        messageTypeKey = "";
+      }
+      
+      const { operator, circle } = parseSenderPrefix(prefix);
+      const senderName = senderCode || "Unknown Sender";
+      const typeDescription = messageTypeKey ? (messageTypes[messageTypeKey] || "Unknown Type") : "Unknown Type";
+      
+      document.getElementById('output').innerHTML =
+        `📡 <strong>Operator:</strong> ${operator}<br/>
+         🌍 <strong>Telecom Circle:</strong> ${circle}<br/>
+         🏛 <strong>Sender Name:</strong> ${senderName}<br/>
+         ✉️ <strong>Message Type:</strong> ${typeDescription}`;
+    }
+  </script>
+</body>
+</html>
